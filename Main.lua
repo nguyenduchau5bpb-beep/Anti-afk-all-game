@@ -1,6 +1,8 @@
 local success, err = pcall(function()
 
-    -- Services
+    -- ================================================
+    -- 1. BIẾN & CẤU HÌNH HỆ THỐNG
+    -- ================================================
     local CoreGui = game:GetService("CoreGui")
     local UserInputService = game:GetService("UserInputService")
     local RunService = game:GetService("RunService")
@@ -8,47 +10,138 @@ local success, err = pcall(function()
     local TweenService = game:GetService("TweenService")
     local HttpService = game:GetService("HttpService")
     local VirtualUser = game:GetService("VirtualUser")
+    local TeleportService = game:GetService("TeleportService")
+    local GuiService = game:GetService("GuiService")
 
     local LocalPlayer = Players.LocalPlayer
 
-    -- System Configuration
+    -- 🔑 Key & File lưu Cache
+    local TARGET_KEY = "TTTT"
     local KEY_LINK = "https://discord.gg/KDTDZjYSR"
     local BACKUP_LINK = "https://fnote.net/notes/jv9G9J"
     local CACHE_FILE = "MrGhostVIP_KeyCache.json"
-    local EXPIRE_TIME = 86400
+    local EXPIRE_TIME = 86400 -- Lưu key 24 tiếng
 
-    -- 🔐 SECURE KEY SYSTEM
-    local TARGET_KEY = "TTTT"
-
-    local function verifyInputKey(input)
-        if type(input) ~= "string" then return false end
-        -- Loại bỏ khoảng trắng thừa nếu có
-        local cleanInput = string.gsub(input, "^%s*(.-)%s*$", "%1")
-        return cleanInput == TARGET_KEY
-    end
-
-    -- State & Timers
+    -- ⚙️ Trạng thái tính năng
     local AntiAFKEnabled = true
+    local AutoReconnectEnabled = true
+    local BlackScreenEnabled = false
     local AfkSeconds = 0
 
-    -- ScreenGui Parent
+    -- 🎨 Tạo ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "MrGhostHub_AntiAFK_VIP"
+    ScreenGui.Name = "MrGhostHub_UltraVIP_Engine"
     local guiParent = (gethui and gethui()) or CoreGui or (LocalPlayer and LocalPlayer:WaitForChild("PlayerGui"))
     ScreenGui.Parent = guiParent
     ScreenGui.ResetOnSpawn = false
 
-    -- Fast Rainbow RGB
+    -- 🌈 Màu RGB đổi liên tục
     local function getRGBColor(speed)
         return Color3.fromHSV((tick() % (speed or 3)) / (speed or 3), 0.85, 1)
     end
 
-    -- Key Cache System
+    -- ================================================
+    -- 2. HỆ THỐNG THÔNG BÁO (FULL LIGHT)
+    -- ================================================
+    local NotificationContainer = Instance.new("Frame")
+    NotificationContainer.Name = "NotificationContainer"
+    NotificationContainer.Size = UDim2.new(0, 260, 1, 0)
+    NotificationContainer.Position = UDim2.new(1, -270, 0, 20)
+    NotificationContainer.BackgroundTransparency = 1
+    NotificationContainer.ZIndex = 10005
+    NotificationContainer.Parent = ScreenGui
+
+    local NotifLayout = Instance.new("UIListLayout")
+    NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    NotifLayout.Padding = UDim.new(0, 8)
+    NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    NotifLayout.Parent = NotificationContainer
+
+    -- 🔔 Hiện thông báo góc màn hình
+    local function showNotification(titleText, descText, duration)
+        duration = duration or 3.5
+
+        local NotifCard = Instance.new("Frame")
+        NotifCard.Size = UDim2.new(1, 0, 0, 60)
+        NotifCard.BackgroundColor3 = Color3.fromRGB(16, 18, 28)
+        NotifCard.BackgroundTransparency = 0.1
+        NotifCard.ClipsDescendants = true
+        NotifCard.ZIndex = 10006
+        NotifCard.Parent = NotificationContainer
+
+        local NotifCorner = Instance.new("UICorner"); NotifCorner.CornerRadius = UDim.new(0, 12); NotifCorner.Parent = NotifCard
+        local NotifStroke = Instance.new("UIStroke"); NotifStroke.Thickness = 1.5; NotifStroke.Parent = NotifCard
+
+        local NotifIcon = Instance.new("TextLabel")
+        NotifIcon.Size = UDim2.new(0, 32, 0, 32)
+        NotifIcon.Position = UDim2.new(0, 10, 0.5, -16)
+        NotifIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 110)
+        NotifIcon.Text = "🔔"
+        NotifIcon.TextSize = 16
+        NotifIcon.ZIndex = 10007
+        NotifIcon.Parent = NotifCard
+
+        local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 8); IconCorner.Parent = NotifIcon
+
+        local TitleLbl = Instance.new("TextLabel")
+        TitleLbl.Size = UDim2.new(1, -52, 0, 18)
+        TitleLbl.Position = UDim2.new(0, 48, 0, 10)
+        TitleLbl.BackgroundTransparency = 1
+        TitleLbl.Text = titleText
+        TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TitleLbl.TextSize = 12
+        TitleLbl.Font = Enum.Font.GothamBold
+        TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        TitleLbl.ZIndex = 10007
+        TitleLbl.Parent = NotifCard
+
+        local DescLbl = Instance.new("TextLabel")
+        DescLbl.Size = UDim2.new(1, -52, 0, 18)
+        DescLbl.Position = UDim2.new(0, 48, 0, 28)
+        DescLbl.BackgroundTransparency = 1
+        DescLbl.Text = descText
+        DescLbl.TextColor3 = Color3.fromRGB(170, 180, 200)
+        DescLbl.TextSize = 11
+        DescLbl.Font = Enum.Font.Gotham
+        DescLbl.TextXAlignment = Enum.TextXAlignment.Left
+        DescLbl.ZIndex = 10007
+        DescLbl.Parent = NotifCard
+
+        -- Viền RGB đổi màu
+        local rgbConn
+        rgbConn = RunService.RenderStepped:Connect(function()
+            if NotifCard.Parent then NotifStroke.Color = getRGBColor(3) else rgbConn:Disconnect() end
+        end)
+
+        -- Hiệu ứng trượt vào
+        NotifCard.Position = UDim2.new(1.2, 0, 0, 0)
+        TweenService:Create(NotifCard, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+
+        -- Tự ẩn sau vài giây
+        task.delay(duration, function()
+            if NotifCard and NotifCard.Parent then
+                local hideTween = TweenService:Create(NotifCard, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1.2, 0, 0, 0)})
+                hideTween:Play()
+                hideTween.Completed:Connect(function() NotifCard:Destroy() end)
+            end
+        end)
+    end
+
+    -- ================================================
+    -- 3. XÁC MINH & LƯU KEY (CACHE 24H)
+    -- ================================================
+    -- 🔍 Kiểm tra key nhập
+    local function verifyInputKey(input)
+        if type(input) ~= "string" then return false end
+        return string.gsub(input, "^%s*(.-)%s*$", "%1") == TARGET_KEY
+    end
+
+    -- 📂 Kiểm tra key đã lưu còn hạn 24h không
     local function isKeySavedValid()
         if readfile and isfile and isfile(CACHE_FILE) then
             local successRead, data = pcall(function() return HttpService:JSONDecode(readfile(CACHE_FILE)) end)
-            if successRead and data and data.token and data.time then
-                if verifyInputKey(data.token) and (os.time() - data.time) < EXPIRE_TIME then 
+            if successRead and type(data) == "table" and data.key and data.time then
+                if verifyInputKey(data.key) and (os.time() - data.time) < EXPIRE_TIME then 
                     return true 
                 end
             end
@@ -56,13 +149,16 @@ local success, err = pcall(function()
         return false
     end
 
+    -- 💾 Lưu key vào máy
     local function saveKeyCache(key)
         if writefile then
-            pcall(function() writefile(CACHE_FILE, HttpService:JSONEncode({ token = key, time = os.time() })) end)
+            pcall(function() writefile(CACHE_FILE, HttpService:JSONEncode({ key = key, time = os.time() })) end)
         end
     end
 
-    -- Draggable Function
+    -- ================================================
+    -- 4. KÉO THẢ UI (DRAGGABLE)
+    -- ================================================
     local function makeDraggable(gui)
         local dragging, dragInput, dragStart, startPos
         gui.InputBegan:Connect(function(input)
@@ -86,7 +182,10 @@ local success, err = pcall(function()
         end)
     end
 
-    -- 🛡️ ADVANCED MULTI-LAYER ANTI-AFK ENGINE
+    -- ================================================
+    -- 5. ENGINE CHỐNG AFK & VĂNG GAME
+    -- ================================================
+    -- 🛡️ Chống AFK 1: Khi game báo rảnh rỗi (Idled)
     LocalPlayer.Idled:Connect(function()
         if AntiAFKEnabled then
             VirtualUser:CaptureController()
@@ -94,10 +193,10 @@ local success, err = pcall(function()
         end
     end)
 
+    -- 🛡️ Chống AFK 2: Click ngẫu nhiên mỗi 30-45 giây
     task.spawn(function()
         while true do
-            local delayTime = math.random(30, 50)
-            task.wait(delayTime)
+            task.wait(math.random(30, 45))
             if AntiAFKEnabled then
                 pcall(function()
                     VirtualUser:CaptureController()
@@ -107,36 +206,67 @@ local success, err = pcall(function()
         end
     end)
 
-    -- AFK Time Counter Loop
+    -- ⏱️ Đếm thời gian treo máy
     task.spawn(function()
         while true do
             task.wait(1)
-            if AntiAFKEnabled then
-                AfkSeconds = AfkSeconds + 1
-            end
+            if AntiAFKEnabled then AfkSeconds = AfkSeconds + 1 end
         end
     end)
 
-    -- MAIN HUB
+    -- 🔄 Tự vào lại server khi văng mạng
+    GuiService.ErrorCodeChanged:Connect(function()
+        if AutoReconnectEnabled then
+            showNotification("⚠️ CẢNH BÁO MẤT MẠNG", "Đang tự động kết nối lại Server...", 5)
+            task.wait(3)
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end
+    end)
+
+    -- 🌙 Màn hình đen tiết kiệm pin (Nằm dưới nút Ghost)
+    local BlackFrame = Instance.new("Frame")
+    BlackFrame.Name = "GPU_Saver_Overlay"
+    BlackFrame.Size = UDim2.new(1, 0, 1, 0)
+    BlackFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    BlackFrame.Visible = false
+    BlackFrame.ZIndex = 9999
+    BlackFrame.Parent = ScreenGui
+
+    local BlackText = Instance.new("TextLabel")
+    BlackText.Size = UDim2.new(1, 0, 0, 40)
+    BlackText.Position = UDim2.new(0, 0, 0.5, -20)
+    BlackText.BackgroundTransparency = 1
+    BlackText.Text = "🌙 CHẾ ĐỘ TIẾT KIỆM PIN / MÁT MÁY (Bấm nút Ghost để tắt)"
+    BlackText.TextColor3 = Color3.fromRGB(0, 255, 160)
+    BlackText.TextSize = 14
+    BlackText.Font = Enum.Font.GothamBold
+    BlackText.ZIndex = 9999
+    BlackText.Parent = BlackFrame
+
+    -- ================================================
+    -- 6. MENU CHÍNH (MAIN HUB)
+    -- ================================================
     local function loadMainHub()
         local MainFrame = Instance.new("Frame")
         MainFrame.Name = "MainFrame"
-        MainFrame.Size = UDim2.new(0, 330, 0, 240)
-        MainFrame.Position = UDim2.new(0.5, -165, 0.35, -120)
+        MainFrame.Size = UDim2.new(0, 330, 0, 270)
+        MainFrame.Position = UDim2.new(0.5, -165, 0.35, -135)
         MainFrame.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
         MainFrame.BackgroundTransparency = 0.05
         MainFrame.BorderSizePixel = 0
         MainFrame.ClipsDescendants = true
+        MainFrame.ZIndex = 500
         MainFrame.Parent = ScreenGui
 
         local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 22); MainCorner.Parent = MainFrame
         local UIStroke = Instance.new("UIStroke"); UIStroke.Thickness = 2.5; UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; UIStroke.Parent = MainFrame
 
-        -- Title Bar
+        -- Thanh tiêu đề
         local TitleBar = Instance.new("Frame")
         TitleBar.Size = UDim2.new(1, 0, 0, 54)
         TitleBar.BackgroundColor3 = Color3.fromRGB(16, 19, 30)
         TitleBar.BackgroundTransparency = 0.1
+        TitleBar.ZIndex = 501
         TitleBar.Parent = MainFrame
 
         local TitleBarCorner = Instance.new("UICorner"); TitleBarCorner.CornerRadius = UDim.new(0, 22); TitleBarCorner.Parent = TitleBar
@@ -147,6 +277,7 @@ local success, err = pcall(function()
         LogoIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 110)
         LogoIcon.Text = "👻"
         LogoIcon.TextSize = 20
+        LogoIcon.ZIndex = 502
         LogoIcon.Parent = TitleBar
 
         local LogoCorner = Instance.new("UICorner"); LogoCorner.CornerRadius = UDim.new(0, 12); LogoCorner.Parent = LogoIcon
@@ -160,6 +291,7 @@ local success, err = pcall(function()
         Title.TextSize = 14
         Title.Font = Enum.Font.GothamBold
         Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.ZIndex = 502
         Title.Parent = TitleBar
 
         local HeartLabel = Instance.new("TextLabel")
@@ -170,24 +302,27 @@ local success, err = pcall(function()
         HeartLabel.TextColor3 = Color3.fromRGB(255, 0, 110)
         HeartLabel.TextSize = 11
         HeartLabel.Font = Enum.Font.GothamBold
+        HeartLabel.ZIndex = 502
         HeartLabel.Parent = TitleBar
 
-        -- Container
+        -- Container nội dung
         local Container = Instance.new("Frame")
         Container.Size = UDim2.new(1, -24, 1, -66)
         Container.Position = UDim2.new(0, 12, 0, 60)
         Container.BackgroundTransparency = 1
+        Container.ZIndex = 501
         Container.Parent = MainFrame
 
-        -- Toggle Card
+        -- Thẻ bật/tắt Anti-AFK
         local Card = Instance.new("Frame")
-        Card.Size = UDim2.new(1, 0, 0, 54)
-        Card.Position = UDim2.new(0, 0, 0, 6)
+        Card.Size = UDim2.new(1, 0, 0, 50)
+        Card.Position = UDim2.new(0, 0, 0, 4)
         Card.BackgroundColor3 = Color3.fromRGB(20, 24, 38)
         Card.BackgroundTransparency = 0.2
+        Card.ZIndex = 502
         Card.Parent = Container
 
-        local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 14); CardCorner.Parent = Card
+        local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 12); CardCorner.Parent = Card
 
         local CardLabel = Instance.new("TextLabel")
         CardLabel.Size = UDim2.new(0.65, 0, 1, 0)
@@ -198,49 +333,84 @@ local success, err = pcall(function()
         CardLabel.TextSize = 12
         CardLabel.Font = Enum.Font.GothamMedium
         CardLabel.TextXAlignment = Enum.TextXAlignment.Left
+        CardLabel.ZIndex = 503
         CardLabel.Parent = Card
 
         local SwitchBg = Instance.new("TextButton")
-        SwitchBg.Size = UDim2.new(0, 50, 0, 26)
-        SwitchBg.Position = UDim2.new(1, -60, 0.5, -13)
+        SwitchBg.Size = UDim2.new(0, 48, 0, 24)
+        SwitchBg.Position = UDim2.new(1, -58, 0.5, -12)
         SwitchBg.BackgroundColor3 = Color3.fromRGB(255, 0, 110)
         SwitchBg.Text = ""
         SwitchBg.AutoButtonColor = false
+        SwitchBg.ZIndex = 503
         SwitchBg.Parent = Card
 
         local SwitchCorner = Instance.new("UICorner"); SwitchCorner.CornerRadius = UDim.new(1, 0); SwitchCorner.Parent = SwitchBg
 
         local SwitchDot = Instance.new("Frame")
-        SwitchDot.Size = UDim2.new(0, 20, 0, 20)
-        SwitchDot.Position = UDim2.new(1, -23, 0.5, -10)
+        SwitchDot.Size = UDim2.new(0, 18, 0, 18)
+        SwitchDot.Position = UDim2.new(1, -21, 0.5, -9)
         SwitchDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SwitchDot.ZIndex = 504
         SwitchDot.Parent = SwitchBg
 
         local SwitchDotCorner = Instance.new("UICorner"); SwitchDotCorner.CornerRadius = UDim.new(1, 0); SwitchDotCorner.Parent = SwitchDot
 
-        -- Live Status Label
+        -- Chữ trạng thái
         local StatusInfo = Instance.new("TextLabel")
-        StatusInfo.Size = UDim2.new(1, 0, 0, 20)
-        StatusInfo.Position = UDim2.new(0, 0, 0, 72)
+        StatusInfo.Size = UDim2.new(1, 0, 0, 18)
+        StatusInfo.Position = UDim2.new(0, 0, 0, 60)
         StatusInfo.BackgroundTransparency = 1
         StatusInfo.Text = "● Trạng thái: Đang bảo vệ 24/7"
         StatusInfo.TextColor3 = Color3.fromRGB(0, 255, 160)
         StatusInfo.TextSize = 11
         StatusInfo.Font = Enum.Font.Gotham
+        StatusInfo.ZIndex = 502
         StatusInfo.Parent = Container
 
-        -- Timer Display Label
+        -- Đồng hồ đếm giờ
         local TimerInfo = Instance.new("TextLabel")
-        TimerInfo.Size = UDim2.new(1, 0, 0, 20)
-        TimerInfo.Position = UDim2.new(0, 0, 0, 94)
+        TimerInfo.Size = UDim2.new(1, 0, 0, 18)
+        TimerInfo.Position = UDim2.new(0, 0, 0, 80)
         TimerInfo.BackgroundTransparency = 1
         TimerInfo.Text = "⏱️ Thời gian treo: 00g 00p 00s"
         TimerInfo.TextColor3 = Color3.fromRGB(0, 230, 255)
         TimerInfo.TextSize = 11
         TimerInfo.Font = Enum.Font.GothamBold
+        TimerInfo.ZIndex = 502
         TimerInfo.Parent = Container
 
-        -- Timer Update Loop
+        -- Nút Tắt màn hình
+        local BlackBtn = Instance.new("TextButton")
+        BlackBtn.Size = UDim2.new(0.48, -4, 0, 32)
+        BlackBtn.Position = UDim2.new(0, 0, 0, 106)
+        BlackBtn.BackgroundColor3 = Color3.fromRGB(30, 36, 56)
+        BlackBtn.Text = "🌙 Tắt Màn Hình"
+        BlackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        BlackBtn.TextSize = 11
+        BlackBtn.Font = Enum.Font.GothamBold
+        BlackBtn.ZIndex = 502
+        BlackBtn.Parent = Container
+
+        local BlackBtnCorner = Instance.new("UICorner"); BlackBtnCorner.CornerRadius = UDim.new(0, 8); BlackBtnCorner.Parent = BlackBtn
+
+        -- Nút Rejoin Server
+        local RejoinBtn = Instance.new("TextButton")
+        RejoinBtn.Size = UDim2.new(0.48, -4, 0, 32)
+        RejoinBtn.Position = UDim2.new(0.52, 0, 0, 106)
+        RejoinBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+        RejoinBtn.Text = "🔄 Vào Lại Server"
+        RejoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        RejoinBtn.TextSize = 11
+        RejoinBtn.Font = Enum.Font.GothamBold
+        RejoinBtn.ZIndex = 502
+        RejoinBtn.Parent = Container
+
+        local RejoinBtnCorner = Instance.new("UICorner"); RejoinBtnCorner.CornerRadius = UDim.new(0, 8); RejoinBtnCorner.Parent = RejoinBtn
+
+        local StatusBadgeLabel
+
+        -- Cập nhật đồng hồ mỗi giây
         task.spawn(function()
             while true do
                 task.wait(1)
@@ -251,45 +421,95 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Switch Event
+        -- 🖱️ Click nút công tắc Anti-AFK
         SwitchBg.MouseButton1Click:Connect(function()
             AntiAFKEnabled = not AntiAFKEnabled
             if AntiAFKEnabled then
                 TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {BackgroundColor3 = Color3.fromRGB(255, 0, 110)}):Play()
-                TweenService:Create(SwitchDot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(1, -23, 0.5, -10)}):Play()
+                TweenService:Create(SwitchDot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(1, -21, 0.5, -9)}):Play()
                 StatusInfo.Text = "● Trạng thái: Đang bảo vệ 24/7"
                 StatusInfo.TextColor3 = Color3.fromRGB(0, 255, 160)
+                if StatusBadgeLabel then StatusBadgeLabel.Text = "● ON"; StatusBadgeLabel.TextColor3 = Color3.fromRGB(0, 255, 160) end
+                showNotification("🛡️ CHỐNG AFK", "Đã KÍCH HOẠT hệ thống Anti-AFK!", 2.5)
             else
                 TweenService:Create(SwitchBg, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {BackgroundColor3 = Color3.fromRGB(45, 52, 75)}):Play()
-                TweenService:Create(SwitchDot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(0, 3, 0.5, -10)}):Play()
+                TweenService:Create(SwitchDot, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Position = UDim2.new(0, 3, 0.5, -9)}):Play()
                 StatusInfo.Text = "○ Trạng thái: Đã tạm dừng"
                 StatusInfo.TextColor3 = Color3.fromRGB(160, 160, 175)
+                if StatusBadgeLabel then StatusBadgeLabel.Text = "○ OFF"; StatusBadgeLabel.TextColor3 = Color3.fromRGB(160, 160, 175) end
+                showNotification("🛡️ CHỐNG AFK", "Đã TẠM DỪNG hệ thống Anti-AFK!", 2.5)
             end
         end)
 
-        -- 💎 NÚT PHỤ MINI ULTRA FLOATING BALL
+        -- 🖱️ Click bật Màn hình đen
+        BlackBtn.MouseButton1Click:Connect(function()
+            BlackScreenEnabled = not BlackScreenEnabled
+            BlackFrame.Visible = BlackScreenEnabled
+            if BlackScreenEnabled then
+                showNotification("🌙 TIẾT KIỆM PIN", "Đã bật màn hình đen tiết kiệm điện!", 3)
+            end
+        end)
+
+        -- 🖱️ Click Rejoin
+        RejoinBtn.MouseButton1Click:Connect(function()
+            showNotification("🔄 RECONNECT", "Đang tự động vào lại Server...", 3)
+            task.wait(1)
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end)
+
+        -- ================================================
+        -- 7. NÚT PHỤ CYBER GHOST (ZINDEX 10000 NỔI ĐÈ)
+        -- ================================================
         local ToggleMenuBtn = Instance.new("TextButton")
-        ToggleMenuBtn.Name = "MiniToggleUltraVIP"
-        ToggleMenuBtn.Size = UDim2.new(0, 58, 0, 58)
+        ToggleMenuBtn.Name = "CyberGhostFloatingButton"
+        ToggleMenuBtn.Size = UDim2.new(0, 62, 0, 62)
         ToggleMenuBtn.Position = UDim2.new(0.03, 0, 0.25, 0)
         ToggleMenuBtn.BackgroundColor3 = Color3.fromRGB(14, 16, 26)
         ToggleMenuBtn.Text = "👻"
-        ToggleMenuBtn.TextSize = 26
+        ToggleMenuBtn.TextSize = 28
         ToggleMenuBtn.AutoButtonColor = false
+        ToggleMenuBtn.ZIndex = 10000 -- Nổi đè lên màn hình đen
         ToggleMenuBtn.Parent = ScreenGui
 
         local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(1, 0); ToggleCorner.Parent = ToggleMenuBtn
         local ToggleStroke = Instance.new("UIStroke"); ToggleStroke.Thickness = 3; ToggleStroke.Parent = ToggleMenuBtn
+
+        -- Badge trạng thái ON/OFF dưới chân nút Ghost
+        local StatusBadge = Instance.new("Frame")
+        StatusBadge.Size = UDim2.new(0, 42, 0, 18)
+        StatusBadge.Position = UDim2.new(0.5, -21, 1, -8)
+        StatusBadge.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
+        StatusBadge.ZIndex = 10001
+        StatusBadge.Parent = ToggleMenuBtn
+
+        local BadgeCorner = Instance.new("UICorner"); BadgeCorner.CornerRadius = UDim.new(1, 0); BadgeCorner.Parent = StatusBadge
+        local BadgeStroke = Instance.new("UIStroke"); BadgeStroke.Thickness = 1; BadgeStroke.Color = Color3.fromRGB(40, 50, 75); BadgeStroke.Parent = StatusBadge
+
+        StatusBadgeLabel = Instance.new("TextLabel")
+        StatusBadgeLabel.Size = UDim2.new(1, 0, 1, 0)
+        StatusBadgeLabel.BackgroundTransparency = 1
+        StatusBadgeLabel.Text = "● ON"
+        StatusBadgeLabel.TextColor3 = Color3.fromRGB(0, 255, 160)
+        StatusBadgeLabel.TextSize = 9
+        StatusBadgeLabel.Font = Enum.Font.GothamBold
+        StatusBadgeLabel.ZIndex = 10002
+        StatusBadgeLabel.Parent = StatusBadge
 
         makeDraggable(MainFrame)
         makeDraggable(ToggleMenuBtn)
 
         local menuVisible = true
 
-        -- Animation Click Elastic Bounce cho Nút Phụ
+        -- 🖱️ Click Nút Ghost -> Đóng/Mở Menu & Tắt Màn hình đen
         ToggleMenuBtn.MouseButton1Click:Connect(function()
-            local bounceDown = TweenService:Create(ToggleMenuBtn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 48, 0, 48)})
-            local bounceUp = TweenService:Create(ToggleMenuBtn, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.new(0, 58, 0, 58)})
+            if BlackScreenEnabled then
+                BlackScreenEnabled = false
+                BlackFrame.Visible = false
+            end
+
+            -- Hiệu ứng nảy
+            local bounceDown = TweenService:Create(ToggleMenuBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 50, 0, 50)})
+            local bounceUp = TweenService:Create(ToggleMenuBtn, TweenInfo.new(0.25, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Size = UDim2.new(0, 62, 0, 62)})
             
             bounceDown:Play()
             bounceDown.Completed:Connect(function() bounceUp:Play() end)
@@ -299,7 +519,7 @@ local success, err = pcall(function()
             if menuVisible then
                 MainFrame.Visible = true
                 TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                    Size = UDim2.new(0, 330, 0, 240),
+                    Size = UDim2.new(0, 330, 0, 270),
                     BackgroundTransparency = 0.05
                 }):Play()
             else
@@ -312,23 +532,22 @@ local success, err = pcall(function()
             end
         end)
 
-        -- Render Loop RGB Rainbow Sync
+        -- Đổi màu LED cầu vồng
         RunService.RenderStepped:Connect(function()
             local rainbow = getRGBColor(3)
             UIStroke.Color = rainbow
             ToggleStroke.Color = rainbow
         end)
 
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "★ MRGHOST HUB VIP ★",
-            Text = "Đã bật Anti-AFK Multi-Layer Engine!",
-            Duration = 3
-        })
+        showNotification("★ MRGHOST HUB VIP ★", "Đã bật Anti-AFK Ultra Engine!", 3.5)
     end
 
-    -- KEY SYSTEM UI
+    -- ================================================
+    -- 8. GIAO DIỆN NHẬP KEY (KEY SYSTEM)
+    -- ================================================
     if isKeySavedValid() then
         loadMainHub()
+        showNotification("🔑 HỆ THỐNG KEY", "Đã tự động xác minh Key Cache 24h!", 3)
     else
         local KeyFrame = Instance.new("Frame")
         KeyFrame.Name = "KeyFrame"; KeyFrame.Size = UDim2.new(0, 300, 0, 215); KeyFrame.Position = UDim2.new(0.5, -150, 0.4, -107); KeyFrame.BackgroundColor3 = Color3.fromRGB(15, 17, 26); KeyFrame.Parent = ScreenGui
@@ -357,9 +576,10 @@ local success, err = pcall(function()
             if setclipboard then setclipboard(BACKUP_LINK); StatusText.Text = "✅ Đã copy link Fnote!" end
         end)
 
+        -- 🖱️ Click kiểm tra key
         CheckBtn.MouseButton1Click:Connect(function()
             if verifyInputKey(KeyTextBox.Text) then
-                StatusText.Text = "🎉 Đang tải Hub..."
+                StatusText.Text = "🎉 Key chính xác! Đang tải..."
                 saveKeyCache(KeyTextBox.Text)
                 task.wait(0.3)
                 KeyFrame:Destroy()
