@@ -17,36 +17,14 @@ local success, err = pcall(function()
     local CACHE_FILE = "MrGhostVIP_KeyCache.json"
     local EXPIRE_TIME = 86400
 
-    -- 🔐 SECURE KEY ENCRYPTION (XOR + BASE64)
-    local ENCRYPTED_KEY_HASH = "VkFRVVE=" 
-    local SECRET_MASK = 42
-
-    local function decodeString(b64)
-        local b = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-        b64 = string.gsub(b64, '[^'..b..'=]', '')
-        return (b64:gsub('.', function(x)
-            if (x == '=') then return '' end
-            local r,f='',(b:find(x)-1)
-            for i=6,1,-1 do r=r..(f%2^i - f%2^(i-1) > 0 and '1' or '0') end
-            return r
-        end):gsub('%d%d%d%d%d%d%d%d', function(x)
-            return string.char(tonumber(x,2))
-        end))
-    end
+    -- 🔐 SECURE KEY SYSTEM
+    local TARGET_KEY = "TTTT"
 
     local function verifyInputKey(input)
-        if type(input) ~= "string" or #input == 0 then return false end
-        local rawTarget = decodeString(ENCRYPTED_KEY_HASH)
-        if #input ~= #rawTarget then return false end
-        
-        for i = 1, #input do
-            local inputChar = string.byte(input, i)
-            local targetChar = string.byte(rawTarget, i)
-            if bit32.bxor(inputChar, SECRET_MASK) ~= targetChar then
-                return false
-            end
-        end
-        return true
+        if type(input) ~= "string" then return false end
+        -- Loại bỏ khoảng trắng thừa nếu có
+        local cleanInput = string.gsub(input, "^%s*(.-)%s*$", "%1")
+        return cleanInput == TARGET_KEY
     end
 
     -- State & Timers
@@ -124,12 +102,6 @@ local success, err = pcall(function()
                 pcall(function()
                     VirtualUser:CaptureController()
                     VirtualUser:ClickButton2(Vector2.new(0, 0))
-                    
-                    -- Smart anti-kick simulation
-                    local char = LocalPlayer.Character
-                    if char and char:FindFirstChildOfClass("Humanoid") then
-                        VirtualUser:TypeKey(0x32) -- Simulate subtle input
-                    end
                 end)
             end
         end
@@ -398,4 +370,3 @@ local success, err = pcall(function()
         end)
     end
 end)
- 
