@@ -1,7 +1,10 @@
--- [[ MRGHOST HUB VIP - GOD OF HYPERION EDITION (V5.6 ULTIMATE HOP) ]]
+-- [[ MRGHOST HUB VIP - GOD OF HYPERION EDITION (V5.7 SCRIPT TAG) ]]
 getgenv().Hide_Menu = false
 getgenv().Auto_Execute = true
 getgenv().Webhook_URL = "https://discord.com/api/webhooks/1542997106426380288/Op_ommDV05_lwjHsuQSA2nGbRMh1N1HHORv2YN4MI4fQWoPiGQKhxUFGtc84J3DrXN5h"
+
+-- Tên script để phân biệt khi bạn treo nhiều acc / nhiều script khác nhau
+local SCRIPT_NAME = "MrGhost Hub VIP (Anti AFK & Auto Hop)"
 
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -46,10 +49,12 @@ local function savePass()
     end
 end
 
+-- Đã tích hợp thêm dòng Tên Script vào Webhook
 local function sendWebhookNotification(title, msg, color, shouldPing)
     local http_request = (syn and syn.request) or (http and http.request) or request or http_request
     if getgenv().Webhook_URL and #getgenv().Webhook_URL > 10 and http_request then
         pcall(function()
+            local fullMsg = "📌 **Script:** `" .. SCRIPT_NAME .. "`\n\n" .. msg
             http_request({
                 Url = getgenv().Webhook_URL,
                 Method = "POST",
@@ -58,7 +63,7 @@ local function sendWebhookNotification(title, msg, color, shouldPing)
                     content = shouldPing and "@everyone" or "",
                     embeds = {{
                         title = title or "⚡ MRGHOST HUB VIP LOGGER",
-                        description = msg,
+                        description = fullMsg,
                         color = color or 16711800,
                         footer = {text = "User: " .. LocalPlayer.Name .. " | JobId: " .. tostring(game.JobId)},
                         timestamp = DateTime.now():ToIsoDate()
@@ -159,7 +164,7 @@ task.spawn(function()
     end
 end)
 
--- 🌐 HÀM HOP SERVER TỐI ƯU (CHỌN SERVER ÍT NGƯỜI NHẤT)
+-- 🌐 HÀM HOP SERVER TỐI ƯU
 local function Hop()
     sendWebhookNotification("🌐 SERVER HOP", "🔄 Đang tìm server ít người nhất để chuyển...", 3447003, false)
     local success, result = pcall(function()
@@ -175,7 +180,6 @@ local function Hop()
         end
         
         if #servers > 0 then
-            -- Sắp xếp server từ ít người nhất đến nhiều người nhất
             table.sort(servers, function(a, b)
                 return a.playing < b.playing
             end)
@@ -186,7 +190,6 @@ local function Hop()
         end
     end
     
-    -- Phòng hờ nếu API lỗi thì tự động hop thường
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
     return false
 end
@@ -212,7 +215,7 @@ if promptOverlay then
     end)
 end
 
--- Chat Commands (Dành cho bản Quốc Tế nếu muốn gõ chat)
+-- Chat Commands (Quốc Tế)
 LocalPlayer.Chatted:Connect(function(message)
     local msg = string.lower(message)
     if msg == "!status" then
@@ -261,7 +264,7 @@ local function loadMainHub()
     TitleText.Size = UDim2.new(1, -16, 1, 0)
     TitleText.Position = UDim2.new(0, 12, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "👑 MRGHOST HUB VIP (v5.6)"
+    TitleText.Text = "👑 MRGHOST HUB VIP (v5.7)"
     TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
     TitleText.TextSize = 13
     TitleText.Font = Enum.Font.GothamBold
