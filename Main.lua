@@ -1,49 +1,36 @@
--- [[ MRGHOST HUB VIP - GOD OF HYPERION EDITION (V9.0 OMNI-QUANTUM BEYOND) ]]
--- 🌟 COMPATIBILITY: PC (Bloxstrap, Native) & Mobile Executing Engines (Delta, Fluxus, Codex, Cryptic, Hydrogen, Arceus X, Vega X)
--- 🛡️ SECURITY: Full Metatable Spoofing, Task Anti-Hook, Memory Stealth & Multi-Game Auto Detection
-
+-- [[ ANTI AFK VIP - INTERACTIVE DISCORD BOT SYSTEM ]]
 getgenv().Hide_Menu = false 
 getgenv().Auto_Execute = true
-getgenv().StreamerMode = true 
-getgenv().Webhook_URL = "https://discord.com/api/webhooks/1542997106426380288/Op_ommDV05_lwjHsuQSA2nGbRMh1N1HHORv2YN4MI4fQWoPiGQKhxUFGtc84J3DrXN5h"
+getgenv().StreamerMode = false
 
-local SCRIPT_NAME = "MrGhost VIP [Omni-Quantum v9.0]"
+-- 🔗 API SERVER LINK
+getgenv().Server_API = "https://bot-thong-tin.onrender.com/api/report"
+
+local SCRIPT_TITLE = "Anti afk vip"
 
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local TeleportService = game:GetService("TeleportService")
 local Stats = game:GetService("Stats")
-local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
-local SECRET_PASS = "TTTT"
-local CACHE_NAME = "MrGhostVIP_QuantumCache.json"
-
 local AntiAFKEnabled = true
 local UltraSaverMode = true
-local AutoLowGFX = true
-local AutoRAMCleaner = true
 local AntiStaffEnabled = true
 local AfkSeconds = 0
 
--- 🌌 1. QUANTUM EXECUTOR & MEMORY STEALTH ENGINE
 local function GetQuantumContainer()
-    if gethui then
-        return gethui()
+    if gethui then return gethui()
     elseif syn and syn.protect_gui then
         local folder = Instance.new("Folder")
         syn.protect_gui(folder)
         folder.Parent = CoreGui
         return folder
-    elseif CoreGui:FindFirstChild("RobloxGui") then
-        return CoreGui.RobloxGui
-    end
+    elseif CoreGui:FindFirstChild("RobloxGui") then return CoreGui.RobloxGui end
     return CoreGui
 end
 
@@ -51,21 +38,14 @@ local function GetHttpRequest()
     return (syn and syn.request) or (http and http.request) or request or (fluxus and fluxus.request) or http_request
 end
 
-local function MaskName(str)
-    if not str or #str == 0 then return "***" end
-    if #str <= 3 then return str:sub(1,1) .. "***" end
-    return str:sub(1, 2) .. string.rep("*", math.max(3, #str - 4)) .. str:sub(-1)
-end
-
--- Cleanup Old System Frames
 pcall(function()
     for _, child in pairs(GetQuantumContainer():GetChildren()) do
-        if child.Name:find("MrGhost_Quantum_UI") then child:Destroy() end
+        if child.Name:find("AntiAFK_UI") then child:Destroy() end
     end
 end)
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MrGhost_Quantum_UI_" .. math.random(1000000, 9999999)
+ScreenGui.Name = "AntiAFK_UI_" .. math.random(1000000, 9999999)
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = GetQuantumContainer()
 
@@ -73,51 +53,51 @@ local function getRGBColor()
     return Color3.fromHSV((tick() % 2.5) / 2.5, 0.95, 1)
 end
 
--- 📡 2. ADVANCED EMBED DISCORD MONITORING
-local function sendWebhookNotification(title, msg, color, shouldPing)
+-- ⚡ GỬI DỮ LIỆU ĐẾN API SERVER
+local function dispatchWebhooks(eventTitle, statusMessage, colorHex, isCritical)
     local req = GetHttpRequest()
-    if getgenv().Webhook_URL and #getgenv().Webhook_URL > 10 and req then
-        task.spawn(function()
-            pcall(function()
-                local pingVal = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-                local totalPlayers = #Players:GetPlayers()
-                local ramUsage = math.floor(collectgarbage("count") / 1024)
-                
-                local extraInfo = string.format("\n\n🎮 **Thông Số Mới Nhất:**\n📍 Place ID: `%s`\n👤 Tài khoản: `%s` (%s)\n👥 Server: `%d/%d` | 📶 Ping: `%d ms`\n💾 RAM: `%d MB` | ⏳ Đã treo: `%d phút`", 
-                    tostring(game.PlaceId), LocalPlayer.Name, LocalPlayer.DisplayName, totalPlayers, Players.MaxPlayers, pingVal, ramUsage, math.floor(AfkSeconds / 60))
-                
-                req({
-                    Url = getgenv().Webhook_URL,
-                    Method = "POST",
-                    Headers = {["Content-Type"] = "application/json"},
-                    Body = HttpService:JSONEncode({
-                        content = shouldPing and "@everyone 🚨 **CẢNH BÁO TỰ ĐỘNG!**" or "",
-                        embeds = {{
-                            title = title or "👑 MRGHOST QUANTUM MONITOR",
-                            description = "⚡ **Core System:** `" .. SCRIPT_NAME .. "`\n\n" .. msg .. extraInfo,
-                            color = color or (pingVal > 150 and 15158332 or 3066993),
-                            footer = {text = "Quantum Stealth Engine • JobId: " .. tostring(game.JobId)},
-                            timestamp = DateTime.now():ToIsoDate()
-                        }}
-                    })
-                })
-            end)
+    if not req or not getgenv().Server_API then return end
+
+    local pingVal = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+    local ramUsage = math.floor(collectgarbage("count") / 1024)
+    local rawName = LocalPlayer.Name
+    local rawDisplayName = LocalPlayer.DisplayName
+    
+    local displayNameToSend = getgenv().StreamerMode and (rawDisplayName:sub(1,2) .. "*****") or rawDisplayName
+    local nameToSend = getgenv().StreamerMode and (rawName:sub(1,2) .. "*****") or rawName
+
+    local rawJob = tostring(game.JobId)
+    local timeAfk = math.floor(AfkSeconds / 60)
+
+    task.spawn(function()
+        pcall(function()
+            local payload = {
+                userId = LocalPlayer.UserId,
+                username = nameToSend,
+                displayName = displayNameToSend,
+                jobId = rawJob,
+                placeId = game.PlaceId,
+                ping = pingVal,
+                ram = ramUsage,
+                afkTime = timeAfk,
+                isCritical = isCritical or false,
+                eventTitle = eventTitle,
+                customDescription = string.format("👤 **Tài khoản:** `%s` (%s)\n🏓 **Ping:** `%d ms` | 💾 **RAM:** `%d MB`\n⏳ **TG AFK:** `%d phút`\n📌 **Trạng thái:** %s", nameToSend, displayNameToSend, pingVal, ramUsage, timeAfk, statusMessage)
+            }
+
+            req({
+                Url = getgenv().Server_API,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(payload)
+            })
         end)
-    end
+    end)
 end
 
--- 🛡️ 3. DEEP METATABLE SPOOFING & ANTI-DETECTION
-if hookmetamethod then
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        if not checkcaller() and (method == "Kick" or method == "kick") then return nil end
-        return oldNamecall(self, ...)
-    end))
-end
-
+-- 🌐 HOP SERVER
 local function Hop()
-    sendWebhookNotification("🌐 QUANTUM SERVER HOP", "🔄 Đang tìm Server ít người nhất để chuyển...", 3447003, false)
+    dispatchWebhooks("SERVER HOP", "🔄 Đang tìm Server mới...", 3447003, false)
     local success, result = pcall(function()
         return HttpService:JSONEncode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
     end)
@@ -139,54 +119,13 @@ local function Hop()
     return false
 end
 
--- Tự động Reconnect khẩn cấp
-local promptOverlay = CoreGui:FindFirstChild("RobloxPromptGui") and CoreGui.RobloxPromptGui:FindFirstChild("promptOverlay")
-if promptOverlay then
-    promptOverlay.ChildAdded:Connect(function(child)
-        if child.Name == "ErrorPrompt" then
-            sendWebhookNotification("🚨 DISCONNECT DETECTED", "Máy bị ngắt kết nối! Đang tự động Reconnect khẩn cấp...", 15158332, true)
-            task.wait(1.5)
-            Hop()
-        end
-    end)
+local function HopToJobID(jobId)
+    if not jobId or #jobId < 10 then return end
+    dispatchWebhooks("HOP JOB ID", "🎯 Đang chuyển tới Job ID chỉ định...", 3447003, false)
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
 end
 
--- ⚡ 4. GRAPHICS OPTIMIZER & ULTRA HARDWARE SAVER
-local function optimizeGraphics()
-    if not AutoLowGFX then return end
-    pcall(function()
-        settings().Rendering.QualityLevel = 1
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.Brightness = 1
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.SmoothPlastic
-                v.Reflectance = 0
-            elseif v:IsA("Decal") or v:IsA("Texture") then
-                v:Destroy()
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
-            end
-        end
-    end)
-end
-
-if setfpscap then setfpscap(240) end
-pcall(function()
-    UserInputService.WindowFocused:Connect(function()
-        RunService:Set3dRenderingEnabled(true)
-        if setfpscap then setfpscap(240) end
-    end)
-    UserInputService.WindowFocusReleased:Connect(function()
-        if AntiAFKEnabled and UltraSaverMode then
-            RunService:Set3dRenderingEnabled(false)
-            if setfpscap then setfpscap(5) end
-        end
-    end)
-end)
-
--- 🤖 5. TRIPLE-LAYER ANTI-AFK BOT
+-- 🛡️ ANTI-AFK
 LocalPlayer.Idled:Connect(function()
     if AntiAFKEnabled then
         VirtualUser:CaptureController()
@@ -195,59 +134,64 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 task.spawn(function()
-    while task.wait(math.random(3, 5)) do
+    while task.wait(60) do
         if AntiAFKEnabled then
             pcall(function()
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-                task.wait(0.01)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                task.wait(0.2)
+                VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             end)
         end
     end
 end)
 
--- 🚨 6. QUANTUM STAFF DETECTOR
+-- 🚨 CHECK ADMIN
+local function CheckIsRealAdmin(player)
+    if player == LocalPlayer then return false end
+    local isAdmin = false
+    pcall(function()
+        if player:IsFriendsWith(1) or player:GetRankInGroup(1200769) > 0 then isAdmin = true end
+    end)
+    if isAdmin then return true end
+
+    pcall(function()
+        if game.CreatorType == Enum.CreatorType.Group and game.CreatorId > 0 then
+            if player:GetRankInGroup(game.CreatorId) >= 100 then isAdmin = true end
+        elseif game.CreatorType == Enum.CreatorType.User then
+            if player.UserId == game.CreatorId then isAdmin = true end
+        end
+    end)
+    return isAdmin
+end
+
 task.spawn(function()
-    while task.wait(10) do
+    while task.wait(8) do
         if AntiStaffEnabled then
-            pcall(function()
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer then
-                        local n = player.Name:lower()
-                        local d = player.DisplayName:lower()
-                        if n:find("admin") or n:find("mod") or d:find("[admin]") or d:find("[mod]") then
-                            sendWebhookNotification("🚨 PHÁT HIỆN ADMIN!", "Staff (`" .. player.Name .. "`) vào server! Đang Hop khẩn cấp...", 15158332, true)
-                            task.wait(0.2)
-                            Hop()
-                            break
-                        end
-                    end
+            for _, player in pairs(Players:GetPlayers()) do
+                if CheckIsRealAdmin(player) then
+                    dispatchWebhooks("PHÁT HIỆN ADMIN!", "⚠️ Admin/Mod (" .. player.Name .. ") vừa vào server! Đang Hop khẩn cấp...", 15158332, true)
+                    task.wait(0.5)
+                    Hop()
+                    break
                 end
-            end)
+            end
         end
     end
 end)
 
--- ⏱️ TIMER & STATUS REPORT
 task.spawn(function()
     while task.wait(1) do if AntiAFKEnabled then AfkSeconds = AfkSeconds + 1 end end
 end)
 
-local function sendStatusReport()
-    local hrs = math.floor(AfkSeconds / 3600)
-    local mins = math.floor((AfkSeconds % 3600) / 60)
-    local secs = AfkSeconds % 60
-    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-    local fps = math.floor(1 / RunService.RenderStepped:Wait())
-    local reportMsg = string.format("👤 **Player:** %s\n⏱️ **Treo:** %02dg %02dp %02ds\n📶 **Ping:** %d ms | 🚀 **FPS:** %d", LocalPlayer.Name, hrs, mins, secs, ping, fps)
-    sendWebhookNotification("📊 BÁO CÁO STATUS TỰ ĐỘNG", reportMsg, 3066993, false)
-end
-
 task.spawn(function()
-    while task.wait(300) do if AntiAFKEnabled then sendStatusReport() end end
+    while task.wait(60) do
+        if AntiAFKEnabled then
+            dispatchWebhooks("BÁO CÁO TRẠNG THÁI", "✅ Script đang cắm treo bình thường.", 3066993, false)
+        end
+    end
 end)
 
--- 🎨 7. OMNI-QUANTUM UI DESIGN (Touch & Mouse Support)
+-- 🎨 GIAO DIỆN
 local function makeDraggable(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -269,70 +213,121 @@ local function makeDraggable(gui)
 end
 
 local function loadMainHub()
-    optimizeGraphics()
-    sendWebhookNotification("🚀 MRGHOST QUANTUM VIP ONLINE", "🟢 Đã kết nối thành công phiên bản v9.0 Quantum System!", 65280, false)
-
     local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "QuantumMainFrame"
-    MainFrame.Size = UDim2.new(0, 390, 0, 460)
-    MainFrame.Position = UDim2.new(0.5, -195, 0.3, -230)
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 380, 0, 310)
+    MainFrame.Position = UDim2.new(0.5, -190, 0.35, -155)
     MainFrame.BackgroundColor3 = Color3.fromRGB(6, 8, 16)
     MainFrame.Visible = not getgenv().Hide_Menu
     MainFrame.Parent = ScreenGui
-    local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 18); MainCorner.Parent = MainFrame
-    local UIStroke = Instance.new("UIStroke"); UIStroke.Thickness = 3.5; UIStroke.Parent = MainFrame
+    local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
+    local UIStroke = Instance.new("UIStroke"); UIStroke.Thickness = 3; UIStroke.Parent = MainFrame
 
     local TitleBar = Instance.new("Frame")
-    TitleBar.Size = UDim2.new(1, 0, 0, 50)
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
     TitleBar.BackgroundColor3 = Color3.fromRGB(12, 16, 30)
     TitleBar.Parent = MainFrame
-    local TitleCorner = Instance.new("UICorner"); TitleCorner.CornerRadius = UDim.new(0, 18); TitleCorner.Parent = TitleBar
+    local TitleCorner = Instance.new("UICorner"); TitleCorner.CornerRadius = UDim.new(0, 16); TitleCorner.Parent = TitleBar
 
     local TitleText = Instance.new("TextLabel")
     TitleText.Size = UDim2.new(1, -16, 1, 0)
     TitleText.Position = UDim2.new(0, 16, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "👑 MRGHOST VIP (v9.0 Quantum)"
+    TitleText.Text = "🛡️ " .. SCRIPT_TITLE
     TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleText.TextSize = 14
+    TitleText.TextSize = 13
     TitleText.Font = Enum.Font.GothamBold
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     TitleText.Parent = TitleBar
 
-    -- User Status Panel
-    local UserCard = Instance.new("Frame")
-    UserCard.Size = UDim2.new(1, -20, 0, 40)
-    UserCard.Position = UDim2.new(0, 10, 0, 58)
-    UserCard.BackgroundColor3 = Color3.fromRGB(16, 22, 42)
-    UserCard.Parent = MainFrame
-    local UserCorner = Instance.new("UICorner"); UserCorner.CornerRadius = UDim.new(0, 12); UserCorner.Parent = UserCard
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, -20, 0, 32)
+    TabBar.Position = UDim2.new(0, 10, 0, 46)
+    TabBar.BackgroundTransparency = 1
+    TabBar.Parent = MainFrame
 
-    local UserLabel = Instance.new("TextLabel")
-    UserLabel.Size = UDim2.new(1, -20, 1, 0)
-    UserLabel.Position = UDim2.new(0, 10, 0, 0)
-    UserLabel.BackgroundTransparency = 1
-    UserLabel.TextColor3 = Color3.fromRGB(0, 255, 220)
-    UserLabel.TextSize = 11
-    UserLabel.Font = Enum.Font.GothamBold
-    UserLabel.TextXAlignment = Enum.TextXAlignment.Left
-    UserLabel.Parent = UserCard
+    local TabList = Instance.new("UIListLayout")
+    TabList.FillDirection = Enum.FillDirection.Horizontal
+    TabList.Padding = UDim.new(0, 6)
+    TabList.Parent = TabBar
 
-    local function updateUserDisplay()
-        if getgenv().StreamerMode then
-            UserLabel.Text = "👤 Acc: " .. MaskName(LocalPlayer.Name) .. " (" .. MaskName(LocalPlayer.DisplayName) .. ")"
-        else
-            UserLabel.Text = "👤 Acc: " .. LocalPlayer.Name .. " (" .. LocalPlayer.DisplayName .. ")"
+    local PagesFolder = Instance.new("Frame")
+    PagesFolder.Size = UDim2.new(1, -20, 0, 215)
+    PagesFolder.Position = UDim2.new(0, 10, 0, 84)
+    PagesFolder.BackgroundTransparency = 1
+    PagesFolder.Parent = MainFrame
+
+    local Tabs = {}
+    local CurrentTabBtn = nil
+
+    local function CreateTab(tabName)
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Size = UDim2.new(0.31, 0, 1, 0)
+        TabBtn.BackgroundColor3 = Color3.fromRGB(16, 22, 42)
+        TabBtn.Text = tabName
+        TabBtn.TextColor3 = Color3.fromRGB(160, 170, 200)
+        TabBtn.Font = Enum.Font.GothamBold
+        TabBtn.TextSize = 10
+        TabBtn.Parent = TabBar
+        local TabCorner = Instance.new("UICorner"); TabCorner.CornerRadius = UDim.new(0, 8); TabCorner.Parent = TabBtn
+
+        local Page = Instance.new("ScrollingFrame")
+        Page.Size = UDim2.new(1, 0, 1, 0)
+        Page.BackgroundTransparency = 1
+        Page.Visible = false
+        Page.ScrollBarThickness = 2
+        Page.Parent = PagesFolder
+
+        local PageLayout = Instance.new("UIListLayout")
+        PageLayout.Padding = UDim.new(0, 8)
+        PageLayout.Parent = Page
+
+        Tabs[tabName] = {Btn = TabBtn, Page = Page}
+
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, t in pairs(Tabs) do
+                t.Page.Visible = false
+                t.Btn.BackgroundColor3 = Color3.fromRGB(16, 22, 42)
+                t.Btn.TextColor3 = Color3.fromRGB(160, 170, 200)
+            end
+            Page.Visible = true
+            TabBtn.BackgroundColor3 = Color3.fromRGB(38, 110, 240)
+            TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
+
+        if not CurrentTabBtn then
+            CurrentTabBtn = TabBtn
+            Page.Visible = true
+            TabBtn.BackgroundColor3 = Color3.fromRGB(38, 110, 240)
+            TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         end
-    end
-    updateUserDisplay()
 
-    local function createToggleCard(posY, textTitle, defaultState, callback)
+        return Page
+    end
+
+    local MainPage = CreateTab("🏠 Trang Chủ")
+    local HopPage = CreateTab("🌐 Server Hop")
+    local SettingsPage = CreateTab("⚙️ Cài Đặt")
+
+    local function createButton(parent, text, color, callback)
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(1, 0, 0, 36)
+        Btn.BackgroundColor3 = color
+        Btn.Text = text
+        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Btn.TextSize = 10.5
+        Btn.Font = Enum.Font.GothamBold
+        Btn.Parent = parent
+        local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(0, 8); BtnCorner.Parent = Btn
+        Btn.MouseButton1Click:Connect(callback)
+    end
+
+    local function createToggle(parent, textTitle, defaultState, callback)
         local Card = Instance.new("Frame")
-        Card.Size = UDim2.new(1, -20, 0, 40)
-        Card.Position = UDim2.new(0, 10, 0, posY)
+        Card.Size = UDim2.new(1, 0, 0, 36)
         Card.BackgroundColor3 = Color3.fromRGB(12, 18, 34)
-        Card.Parent = MainFrame
-        local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 12); CardCorner.Parent = Card
+        Card.Parent = parent
+        local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 8); CardCorner.Parent = Card
 
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(0.7, 0, 1, 0)
@@ -340,23 +335,22 @@ local function loadMainHub()
         Label.BackgroundTransparency = 1
         Label.Text = textTitle
         Label.TextColor3 = Color3.fromRGB(235, 240, 255)
-        Label.TextSize = 11
+        Label.TextSize = 9.5
         Label.Font = Enum.Font.GothamMedium
         Label.TextXAlignment = Enum.TextXAlignment.Left
         Label.Parent = Card
 
         local SwitchBg = Instance.new("TextButton")
-        SwitchBg.Size = UDim2.new(0, 44, 0, 22)
-        SwitchBg.Position = UDim2.new(1, -52, 0.5, -11)
+        SwitchBg.Size = UDim2.new(0, 38, 0, 18)
+        SwitchBg.Position = UDim2.new(1, -44, 0.5, -9)
         SwitchBg.BackgroundColor3 = defaultState and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(45, 54, 78)
         SwitchBg.Text = ""
-        SwitchBg.AutoButtonColor = false
         SwitchBg.Parent = Card
         local SwitchCorner = Instance.new("UICorner"); SwitchCorner.CornerRadius = UDim.new(1, 0); SwitchCorner.Parent = SwitchBg
 
         local SwitchDot = Instance.new("Frame")
-        SwitchDot.Size = UDim2.new(0, 18, 0, 18)
-        SwitchDot.Position = defaultState and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+        SwitchDot.Size = UDim2.new(0, 14, 0, 14)
+        SwitchDot.Position = defaultState and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
         SwitchDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         SwitchDot.Parent = SwitchBg
         local DotCorner = Instance.new("UICorner"); DotCorner.CornerRadius = UDim.new(1, 0); DotCorner.Parent = SwitchDot
@@ -364,60 +358,78 @@ local function loadMainHub()
         local active = defaultState
         SwitchBg.MouseButton1Click:Connect(function()
             active = not active
-            if active then
-                TweenService:Create(SwitchBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 255, 170)}):Play()
-                TweenService:Create(SwitchDot, TweenInfo.new(0.2), {Position = UDim2.new(1, -20, 0.5, -9)}):Play()
-            else
-                TweenService:Create(SwitchBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 54, 78)}):Play()
-                TweenService:Create(SwitchDot, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0.5, -9)}):Play()
-            end
+            SwitchBg.BackgroundColor3 = active and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(45, 54, 78)
+            SwitchDot.Position = active and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
             callback(active)
         end)
     end
 
-    createToggleCard(104, "🔒 Streamer Mode (Ẩn Tên Acc)", getgenv().StreamerMode, function(val)
-        getgenv().StreamerMode = val
-        updateUserDisplay()
+    createButton(MainPage, "📊 Báo Cáo Status Ngay Lập Tức", Color3.fromRGB(38, 110, 240), function()
+        dispatchWebhooks("BÁO CÁO TRẠNG THÁI", "✅ Báo cáo chủ động từ người dùng.", 3066993, false)
     end)
-    createToggleCard(150, "🛡️ Chống AFK & Kick Auto Engine", AntiAFKEnabled, function(val) AntiAFKEnabled = val end)
-    createToggleCard(196, "❄️ Tối Ưu Hóa CPU/GPU Tối Đa", UltraSaverMode, function(val) UltraSaverMode = val end)
-    createToggleCard(242, "🚨 Tự Động Né Staff/Admin Siêu Tốc", AntiStaffEnabled, function(val) AntiStaffEnabled = val end)
-
-    local function createActionButton(posY, buttonText, btnColor, callback)
-        local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(1, -20, 0, 34)
-        Btn.Position = UDim2.new(0, 10, 0, posY)
-        Btn.BackgroundColor3 = btnColor
-        Btn.Text = buttonText
-        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Btn.TextSize = 11
-        Btn.Font = Enum.Font.GothamBold
-        Btn.Parent = MainFrame
-        local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(0, 10); BtnCorner.Parent = Btn
-
-        Btn.MouseButton1Click:Connect(callback)
-    end
-
-    createActionButton(292, "📊 Gửi Báo Cáo Status Về Discord", Color3.fromRGB(38, 110, 240), function() sendStatusReport() end)
-    createActionButton(332, "🌐 Quantum Server Hop (Nhiều Slot Nhanh)", Color3.fromRGB(90, 80, 240), function() Hop() end)
-    createActionButton(372, "🧹 Giải Phóng Bộ Nhớ RAM Ngay", Color3.fromRGB(235, 120, 30), function()
+    createButton(MainPage, "🧹 Giải Phóng Bộ Nhớ RAM", Color3.fromRGB(235, 120, 30), function()
         collectgarbage("collect")
-        sendWebhookNotification("🧹 MEMORY CLEANED", "Đã xả bộ nhớ RAM thành công!", 16753920, false)
+        dispatchWebhooks("XẢ BÁO TẢI", "🧹 Đã giải phóng bộ nhớ RAM thành công!", 16753920, false)
     end)
 
-    -- Icon Vương Miện Float
+    local JobBoxFrame = Instance.new("Frame")
+    JobBoxFrame.Size = UDim2.new(1, 0, 0, 36)
+    JobBoxFrame.BackgroundColor3 = Color3.fromRGB(16, 22, 42)
+    JobBoxFrame.Parent = HopPage
+    local JobBoxCorner = Instance.new("UICorner"); JobBoxCorner.CornerRadius = UDim.new(0, 8); JobBoxCorner.Parent = JobBoxFrame
+
+    local JobInput = Instance.new("TextBox")
+    JobInput.Size = UDim2.new(0.68, 0, 1, 0)
+    JobInput.Position = UDim2.new(0, 8, 0, 0)
+    JobInput.BackgroundTransparency = 1
+    JobInput.PlaceholderText = "Nhập Job ID..."
+    JobInput.Text = ""
+    JobInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JobInput.PlaceholderColor3 = Color3.fromRGB(130, 140, 170)
+    JobInput.Font = Enum.Font.GothamMedium
+    JobInput.TextSize = 9.5
+    JobInput.TextXAlignment = Enum.TextXAlignment.Left
+    JobInput.Parent = JobBoxFrame
+
+    local PasteBtn = Instance.new("TextButton")
+    PasteBtn.Size = UDim2.new(0.28, 0, 0.75, 0)
+    PasteBtn.Position = UDim2.new(0.7, 0, 0.125, 0)
+    PasteBtn.BackgroundColor3 = Color3.fromRGB(38, 110, 240)
+    PasteBtn.Text = "📋 Dán"
+    PasteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PasteBtn.Font = Enum.Font.GothamBold
+    PasteBtn.TextSize = 9.5
+    PasteBtn.Parent = JobBoxFrame
+    local PasteCorner = Instance.new("UICorner"); PasteCorner.CornerRadius = UDim.new(0, 6); PasteCorner.Parent = PasteBtn
+
+    PasteBtn.MouseButton1Click:Connect(function()
+        if getclipboard or setclipboard then
+            local clip = (getclipboard and getclipboard()) or ""
+            if #clip > 5 then JobInput.Text = clip end
+        end
+    end)
+
+    createButton(HopPage, "🚀 HOP ĐẾN JOB ID NÀY", Color3.fromRGB(168, 85, 247), function()
+        if #JobInput.Text > 5 then HopToJobID(JobInput.Text) end
+    end)
+    createButton(HopPage, "🌐 Hop Server Ngẫu Nhiên", Color3.fromRGB(90, 80, 240), function() Hop() end)
+
+    createToggle(SettingsPage, "🔒 Streamer Mode (Ẩn Tên Acc)", getgenv().StreamerMode, function(val) getgenv().StreamerMode = val end)
+    createToggle(SettingsPage, "🛡️ Anti-AFK An Toàn", AntiAFKEnabled, function(val) AntiAFKEnabled = val end)
+    createToggle(SettingsPage, "❄️ Tối Ưu Hóa CPU/GPU", UltraSaverMode, function(val) UltraSaverMode = val end)
+    createToggle(SettingsPage, "🚨 Né Admin Thông Minh", AntiStaffEnabled, function(val) AntiStaffEnabled = val end)
+
     local ToggleMenuBtn = Instance.new("TextButton")
-    ToggleMenuBtn.Name = "QuantumFloatingIcon"
-    ToggleMenuBtn.Size = UDim2.new(0, 56, 0, 56)
+    ToggleMenuBtn.Name = "FloatingIcon"
+    ToggleMenuBtn.Size = UDim2.new(0, 48, 0, 48)
     ToggleMenuBtn.Position = UDim2.new(0.03, 0, 0.25, 0)
     ToggleMenuBtn.BackgroundColor3 = Color3.fromRGB(10, 14, 26)
-    ToggleMenuBtn.Text = "👑"
-    ToggleMenuBtn.TextSize = 28
-    ToggleMenuBtn.AutoButtonColor = false
+    ToggleMenuBtn.Text = "🛡️"
+    ToggleMenuBtn.TextSize = 24
     ToggleMenuBtn.Parent = ScreenGui
 
     local FloatCorner = Instance.new("UICorner"); FloatCorner.CornerRadius = UDim.new(1, 0); FloatCorner.Parent = ToggleMenuBtn
-    local FloatStroke = Instance.new("UIStroke"); FloatStroke.Thickness = 3.5; FloatStroke.Parent = ToggleMenuBtn
+    local FloatStroke = Instance.new("UIStroke"); FloatStroke.Thickness = 3; FloatStroke.Parent = ToggleMenuBtn
 
     makeDraggable(MainFrame)
     makeDraggable(ToggleMenuBtn)
@@ -435,6 +447,5 @@ local function loadMainHub()
     end)
 end
 
-if writefile then pcall(function() writefile(CACHE_NAME, HttpService:JSONEncode({ key = SECRET_PASS, time = os.time() })) end) end
 loadMainHub()
  
