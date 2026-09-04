@@ -1,12 +1,12 @@
--- [[ ANTI AFK VIP - INTERACTIVE DISCORD BOT SYSTEM ]]
+-- [[ MRGHOST HUB VIP ANTI AFK - INTERACTIVE DISCORD BOT SYSTEM ]]
 getgenv().Hide_Menu = false 
 getgenv().Auto_Execute = true
-getgenv().StreamerMode = false
+getgenv().StreamerMode = true -- Bật true để tự động ẩn tên (mr*****) trên Discord Discord Webhook
 
--- 🔗 API SERVER LINK
+-- 🔗 API SERVER LINK (Link Render Backend Node.js của bạn)
 getgenv().Server_API = "https://bot-thong-tin.onrender.com/api/report"
 
-local SCRIPT_TITLE = "Anti afk vip"
+local SCRIPT_TITLE = "MrGhost Hub VIP Anti AFK"
 
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -40,12 +40,12 @@ end
 
 pcall(function()
     for _, child in pairs(GetQuantumContainer():GetChildren()) do
-        if child.Name:find("AntiAFK_UI") then child:Destroy() end
+        if child.Name:find("MrGhostAFK_UI") then child:Destroy() end
     end
 end)
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AntiAFK_UI_" .. math.random(1000000, 9999999)
+ScreenGui.Name = "MrGhostAFK_UI_" .. math.random(1000000, 9999999)
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = GetQuantumContainer()
 
@@ -53,8 +53,8 @@ local function getRGBColor()
     return Color3.fromHSV((tick() % 2.5) / 2.5, 0.95, 1)
 end
 
--- ⚡ GỬI DỮ LIỆU ĐẾN API SERVER
-local function dispatchWebhooks(eventTitle, statusMessage, colorHex, isCritical)
+-- ⚡ GỬI DỮ LIỆU ĐẾN BACKEND NODE.JS API SERVER
+local function dispatchWebhooks(eventTitle, statusMessage, isCritical)
     local req = GetHttpRequest()
     if not req or not getgenv().Server_API then return end
 
@@ -62,10 +62,6 @@ local function dispatchWebhooks(eventTitle, statusMessage, colorHex, isCritical)
     local ramUsage = math.floor(collectgarbage("count") / 1024)
     local rawName = LocalPlayer.Name
     local rawDisplayName = LocalPlayer.DisplayName
-    
-    local displayNameToSend = getgenv().StreamerMode and (rawDisplayName:sub(1,2) .. "*****") or rawDisplayName
-    local nameToSend = getgenv().StreamerMode and (rawName:sub(1,2) .. "*****") or rawName
-
     local rawJob = tostring(game.JobId)
     local timeAfk = math.floor(AfkSeconds / 60)
 
@@ -73,16 +69,17 @@ local function dispatchWebhooks(eventTitle, statusMessage, colorHex, isCritical)
         pcall(function()
             local payload = {
                 userId = LocalPlayer.UserId,
-                username = nameToSend,
-                displayName = displayNameToSend,
+                username = rawName,
+                displayName = rawDisplayName,
+                hideName = getgenv().StreamerMode, -- Truyền cờ che tên sang Backend Node.js
                 jobId = rawJob,
                 placeId = game.PlaceId,
                 ping = pingVal,
                 ram = ramUsage,
-                afkTime = timeAfk,
+                uptime = timeAfk .. " phút",
+                status = statusMessage,
                 isCritical = isCritical or false,
-                eventTitle = eventTitle,
-                customDescription = string.format("👤 **Tài khoản:** `%s` (%s)\n🏓 **Ping:** `%d ms` | 💾 **RAM:** `%d MB`\n⏳ **TG AFK:** `%d phút`\n📌 **Trạng thái:** %s", nameToSend, displayNameToSend, pingVal, ramUsage, timeAfk, statusMessage)
+                eventTitle = eventTitle
             }
 
             req({
@@ -97,7 +94,7 @@ end
 
 -- 🌐 HOP SERVER
 local function Hop()
-    dispatchWebhooks("SERVER HOP", "🔄 Đang tìm Server mới...", 3447003, false)
+    dispatchWebhooks("SERVER HOP", "🔄 Đang tìm Server mới...", false)
     local success, result = pcall(function()
         return HttpService:JSONEncode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
     end)
@@ -121,7 +118,7 @@ end
 
 local function HopToJobID(jobId)
     if not jobId or #jobId < 10 then return end
-    dispatchWebhooks("HOP JOB ID", "🎯 Đang chuyển tới Job ID chỉ định...", 3447003, false)
+    dispatchWebhooks("HOP JOB ID", "🎯 Đang chuyển tới Job ID chỉ định...", false)
     TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
 end
 
@@ -169,7 +166,7 @@ task.spawn(function()
         if AntiStaffEnabled then
             for _, player in pairs(Players:GetPlayers()) do
                 if CheckIsRealAdmin(player) then
-                    dispatchWebhooks("PHÁT HIỆN ADMIN!", "⚠️ Admin/Mod (" .. player.Name .. ") vừa vào server! Đang Hop khẩn cấp...", 15158332, true)
+                    dispatchWebhooks("PHÁT HIỆN ADMIN!", "⚠️ Admin/Mod (" .. player.Name .. ") vừa vào server! Đang Hop khẩn cấp...", true)
                     task.wait(0.5)
                     Hop()
                     break
@@ -183,15 +180,16 @@ task.spawn(function()
     while task.wait(1) do if AntiAFKEnabled then AfkSeconds = AfkSeconds + 1 end end
 end)
 
+-- Báo cáo trạng thái định kỳ 60s/lần
 task.spawn(function()
     while task.wait(60) do
         if AntiAFKEnabled then
-            dispatchWebhooks("BÁO CÁO TRẠNG THÁI", "✅ Script đang cắm treo bình thường.", 3066993, false)
+            dispatchWebhooks("MrGhost System • BÁO CÁO TRẠNG THÁI", "🟢 Script đang cắm treo bình thường.", false)
         end
     end
 end)
 
--- 🎨 GIAO DIỆN
+-- 🎨 GIAO DIỆN HUB
 local function makeDraggable(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -233,9 +231,9 @@ local function loadMainHub()
     TitleText.Size = UDim2.new(1, -16, 1, 0)
     TitleText.Position = UDim2.new(0, 16, 0, 0)
     TitleText.BackgroundTransparency = 1
-    TitleText.Text = "🛡️ " .. SCRIPT_TITLE
+    TitleText.Text = "👑 " .. SCRIPT_TITLE
     TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TitleText.TextSize = 13
+    TitleText.TextSize = 12
     TitleText.Font = Enum.Font.GothamBold
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     TitleText.Parent = TitleBar
@@ -365,11 +363,11 @@ local function loadMainHub()
     end
 
     createButton(MainPage, "📊 Báo Cáo Status Ngay Lập Tức", Color3.fromRGB(38, 110, 240), function()
-        dispatchWebhooks("BÁO CÁO TRẠNG THÁI", "✅ Báo cáo chủ động từ người dùng.", 3066993, false)
+        dispatchWebhooks("MrGhost System • BÁO CÁO TRẠNG THÁI", "✅ Báo cáo chủ động từ người dùng.", false)
     end)
     createButton(MainPage, "🧹 Giải Phóng Bộ Nhớ RAM", Color3.fromRGB(235, 120, 30), function()
         collectgarbage("collect")
-        dispatchWebhooks("XẢ BÁO TẢI", "🧹 Đã giải phóng bộ nhớ RAM thành công!", 16753920, false)
+        dispatchWebhooks("XẢ BÁO TẢI", "🧹 Đã giải phóng bộ nhớ RAM thành công!", false)
     end)
 
     local JobBoxFrame = Instance.new("Frame")
@@ -424,7 +422,7 @@ local function loadMainHub()
     ToggleMenuBtn.Size = UDim2.new(0, 48, 0, 48)
     ToggleMenuBtn.Position = UDim2.new(0.03, 0, 0.25, 0)
     ToggleMenuBtn.BackgroundColor3 = Color3.fromRGB(10, 14, 26)
-    ToggleMenuBtn.Text = "🛡️"
+    ToggleMenuBtn.Text = "👑"
     ToggleMenuBtn.TextSize = 24
     ToggleMenuBtn.Parent = ScreenGui
 
