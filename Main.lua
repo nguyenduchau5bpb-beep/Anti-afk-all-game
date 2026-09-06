@@ -1,7 +1,7 @@
--- [[ MRGHOST HUB VIP ANTI AFK - INTERACTIVE DISCORD BOT SYSTEM (WITH MATRIX ENGINE) ]]
+-- [[ MRGHOST HUB VIP ANTI AFK + MATRIX ENGINE (FIXED STABILITY) ]]
 
 -- =========================================================
--- PHẦN 1: TÍCH HỢP MA TRẬN BOT DISCORD ENGINE (RUN IN BACKGROUND)
+-- PHẦN 1: DISCORD MATRIX ENGINE (RUN IN BACKGROUND)
 -- =========================================================
 local HttpService = game:GetService("HttpService")
 local Stats = game:GetService("Stats")
@@ -14,16 +14,7 @@ local LP = Players.LocalPlayer
 
 getgenv().API_MATRIX = getgenv().API_MATRIX or "https://bot-thong-tin.onrender.com/api/matrix"
 
--- Anti-AFK Matrix (Chạy ngầm dự phòng)
-pcall(function()
-    LP.Idled:Connect(function()
-        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    end)
-end)
-
--- Auto Allow Bypass Popup Chụp Ảnh
+-- Bypass Popup Chụp Ảnh
 task.spawn(function()
     CoreGui.ChildAdded:Connect(function(child)
         if child.Name == "RobloxPromptGui" or child.Name:find("Prompt") then
@@ -41,21 +32,6 @@ task.spawn(function()
             end)
         end
     end)
-end)
-
--- Auto Rejoin Khi Disconnect
-task.spawn(function()
-    while task.wait(5) do
-        pcall(function()
-            local errorPrompt = CoreGui:FindFirstChild("RobloxPromptGui", true)
-            if errorPrompt then
-                local promptOverlay = errorPrompt:FindFirstChild("promptOverlay", true)
-                if promptOverlay and promptOverlay.Visible then
-                    TeleportService:Teleport(game.PlaceId, LP)
-                end
-            end
-        end)
-    end
 end)
 
 local function CaptureScreenBase64()
@@ -109,7 +85,7 @@ function SendMatrixHeartbeat(eventTitle, alertLevel, sendPic)
 
         if successReq and res and (res.StatusCode == 200 or res.Success) then
             local successDecode, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
-            if successDecode and data and data.cmd then
+            if successDecode and data and data.cmd and data.cmd.executed == false then
                 local cmdType = data.cmd.type
                 if cmdType == "FORCE_HOP" then TeleportService:Teleport(game.PlaceId, LP)
                 elseif cmdType == "HOP_LOW_SERVER" then HopLowPlayerServerMatrix()
@@ -131,20 +107,18 @@ function SendMatrixHeartbeat(eventTitle, alertLevel, sendPic)
 end
 
 task.spawn(function()
-    while task.wait(3) do
+    while task.wait(10) do
         pcall(function() SendMatrixHeartbeat("MRGHOST Anti-AFK Online", "NORMAL", false) end)
     end
 end)
 
 
 -- =========================================================
--- PHẦN 2: SCRIPT MRGHOST HUB VIP ANTI AFK
+-- PHẦN 2: MRGHOST HUB VIP ANTI AFK GIAO DIỆN & TÍNH NĂNG
 -- =========================================================
 getgenv().Hide_Menu = false 
 getgenv().Auto_Execute = true
-getgenv().StreamerMode = true -- Bật true để tự động ẩn tên (mr*****) trên Discord Webhook
-
--- 🔗 API SERVER LINK (Link Render Backend Node.js của bạn)
+getgenv().StreamerMode = true 
 getgenv().Server_API = "https://bot-thong-tin.onrender.com/api/report"
 
 local SCRIPT_TITLE = "MrGhost Hub VIP Anti AFK"
@@ -155,7 +129,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local AntiAFKEnabled = true
 local UltraSaverMode = true
-local AntiStaffEnabled = true
+local AntiStaffEnabled = false -- Đã TẮT mặc định để chống Hop vô lý
 local AfkSeconds = 0
 
 local function GetQuantumContainer()
@@ -188,26 +162,22 @@ local function getRGBColor()
     return Color3.fromHSV((tick() % 2.5) / 2.5, 0.95, 1)
 end
 
--- ⚡ GỬI DỮ LIỆU ĐẾN BACKEND NODE.JS API SERVER
 local function dispatchWebhooks(eventTitle, statusMessage, isCritical)
     local req = GetHttpRequest()
     if not req or not getgenv().Server_API then return end
 
     local pingVal = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
     local ramUsage = math.floor(collectgarbage("count") / 1024)
-    local rawName = LocalPlayer.Name
-    local rawDisplayName = LocalPlayer.DisplayName
-    local rawJob = tostring(game.JobId)
     local timeAfk = math.floor(AfkSeconds / 60)
 
     task.spawn(function()
         pcall(function()
             local payload = {
                 userId = LocalPlayer.UserId,
-                username = rawName,
-                displayName = rawDisplayName,
-                hideName = getgenv().StreamerMode, -- Truyền cờ che tên sang Backend Node.js
-                jobId = rawJob,
+                username = LocalPlayer.Name,
+                displayName = LocalPlayer.DisplayName,
+                hideName = getgenv().StreamerMode,
+                jobId = tostring(game.JobId),
                 placeId = game.PlaceId,
                 ping = pingVal,
                 ram = ramUsage,
@@ -227,7 +197,6 @@ local function dispatchWebhooks(eventTitle, statusMessage, isCritical)
     end)
 end
 
--- 🌐 HOP SERVER
 local function Hop()
     dispatchWebhooks("SERVER HOP", "🔄 Đang tìm Server mới...", false)
     local success, result = pcall(function()
@@ -257,7 +226,7 @@ local function HopToJobID(jobId)
     TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
 end
 
--- 🛡️ ANTI-AFK HUB LOGIC
+-- Chống AFK
 LocalPlayer.Idled:Connect(function()
     if AntiAFKEnabled then
         VirtualUser:CaptureController()
@@ -277,54 +246,20 @@ task.spawn(function()
     end
 end)
 
--- 🚨 CHECK ADMIN
-local function CheckIsRealAdmin(player)
-    if player == LocalPlayer then return false end
-    local isAdmin = false
-    pcall(function()
-        if player:IsFriendsWith(1) or player:GetRankInGroup(1200769) > 0 then isAdmin = true end
-    end)
-    if isAdmin then return true end
-
-    pcall(function()
-        if game.CreatorType == Enum.CreatorType.Group and game.CreatorId > 0 then
-            if player:GetRankInGroup(game.CreatorId) >= 100 then isAdmin = true end
-        elseif game.CreatorType == Enum.CreatorType.User then
-            if player.UserId == game.CreatorId then isAdmin = true end
-        end
-    end)
-    return isAdmin
-end
-
-task.spawn(function()
-    while task.wait(8) do
-        if AntiStaffEnabled then
-            for _, player in pairs(Players:GetPlayers()) do
-                if CheckIsRealAdmin(player) then
-                    dispatchWebhooks("PHÁT HIỆN ADMIN!", "⚠️ Admin/Mod (" .. player.Name .. ") vừa vào server! Đang Hop khẩn cấp...", true)
-                    task.wait(0.5)
-                    Hop()
-                    break
-                end
-            end
-        end
-    end
-end)
-
 task.spawn(function()
     while task.wait(1) do if AntiAFKEnabled then AfkSeconds = AfkSeconds + 1 end end
 end)
 
--- Báo cáo trạng thái định kỳ 60s/lần
+-- Báo cáo trạng thái 3 phút/lần
 task.spawn(function()
-    while task.wait(60) do
+    while task.wait(180) do
         if AntiAFKEnabled then
             dispatchWebhooks("MrGhost System • BÁO CÁO TRẠNG THÁI", "🟢 Script đang cắm treo bình thường.", false)
         end
     end
 end)
 
--- 🎨 GIAO DIỆN HUB
+-- Tạo Giao Diện UI Hub
 local function makeDraggable(gui)
     local dragging, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -550,7 +485,7 @@ local function loadMainHub()
     createToggle(SettingsPage, "🔒 Streamer Mode (Ẩn Tên Acc)", getgenv().StreamerMode, function(val) getgenv().StreamerMode = val end)
     createToggle(SettingsPage, "🛡️ Anti-AFK An Toàn", AntiAFKEnabled, function(val) AntiAFKEnabled = val end)
     createToggle(SettingsPage, "❄️ Tối Ưu Hóa CPU/GPU", UltraSaverMode, function(val) UltraSaverMode = val end)
-    createToggle(SettingsPage, "🚨 Né Admin Thông Minh", AntiStaffEnabled, function(val) AntiStaffEnabled = val end)
+    createToggle(SettingsPage, "🚨 Né Admin (Nếu bật sẽ tự Hop)", AntiStaffEnabled, function(val) AntiStaffEnabled = val end)
 
     local ToggleMenuBtn = Instance.new("TextButton")
     ToggleMenuBtn.Name = "FloatingIcon"
